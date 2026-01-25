@@ -450,12 +450,12 @@ async function fetchDoubanData(url) {
     const fetchOptions = {
         signal: controller.signal,
         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Referer': 'https://movie.douban.com/',
+            'X-Target-Referer': 'https://movie.douban.com/',
             'Accept': 'application/json, text/plain, */*',
         }
     };
-
+//'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  //          'Referer': 'https://movie.douban.com/',
     try {
         // 添加鉴权参数到代理URL
         const proxiedUrl = await window.ProxyAuth?.addAuthToProxyUrl ? 
