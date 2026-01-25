@@ -137,13 +137,25 @@ function getRandomUserAgent() {
 }
 
 async function fetchContentWithType(targetUrl, requestHeaders) {
+    // 优先使用自定义头 `x-target-referer`，然后使用原始请求的 referer，最后回退到目标 origin。
+        let outboundReferer = request.headers.get('x-target-referer') || request.headers.get('referer') || new URL(targetUrl).origin;
+        // 对 Douban 特殊处理：如果目标是 douban 域名，默认使用 https://movie.douban.com/ 作为 Referer（除非 x-target-referer 明确提供）
+        try {
+            if (/douban\.com/i.test(targetUrl)) {
+                outboundReferer = request.headers.get('x-target-referer') || 'https://movie.douban.com/';
+            }
+        } catch (e) {
+            logDebug(`Referer 推断失败: ${e.message}`);
+        }
+
     // 准备请求头
     const headers = {
         'User-Agent': getRandomUserAgent(),
         'Accept': requestHeaders['accept'] || '*/*', // 传递原始 Accept 头（如果有）
         'Accept-Language': requestHeaders['accept-language'] || 'zh-CN,zh;q=0.9,en;q=0.8',
         // 尝试设置一个合理的 Referer
-        'Referer': requestHeaders['referer'] || new URL(targetUrl).origin,
+        //'Referer': requestHeaders['referer'] || new URL(targetUrl).origin,
+        'Referer': outboundReferer
     };
     // 清理空值的头
     Object.keys(headers).forEach(key => headers[key] === undefined || headers[key] === null || headers[key] === '' ? delete headers[key] : {});
