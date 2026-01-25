@@ -124,12 +124,21 @@ function validateAuth(event) {
 }
 
 async function fetchContentWithType(targetUrl, requestHeaders) {
+     let outboundReferer = (requestHeaders && (requestHeaders['x-target-referer'] || requestHeaders['X-Target-Referer'])) || requestHeaders['referer'] || new URL(targetUrl).origin;
+    try {
+        if (/douban\.com/i.test(targetUrl)) {
+            outboundReferer = (requestHeaders && (requestHeaders['x-target-referer'] || requestHeaders['X-Target-Referer'])) || 'https://movie.douban.com/';
+        }
+    } catch (e) {
+        logDebug(`Referer inference failed: ${e.message}`);
+    }
     const headers = {
         'User-Agent': getRandomUserAgent(),
         'Accept': requestHeaders['accept'] || '*/*',
         'Accept-Language': requestHeaders['accept-language'] || 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Referer': requestHeaders['referer'] || new URL(targetUrl).origin,
+        'Referer': outboundReferer,
     };
+   // 'Referer': requestHeaders['referer'] || new URL(targetUrl).origin,
     Object.keys(headers).forEach(key => headers[key] === undefined || headers[key] === null || headers[key] === '' ? delete headers[key] : {});
     logDebug(`Fetching target: ${targetUrl} with headers: ${JSON.stringify(headers)}`);
     try {
