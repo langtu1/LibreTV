@@ -169,6 +169,13 @@ app.get('/proxy/:encodedUrl', async (req, res) => {
     if (!isValidUrl(targetUrl)) {
       return res.status(400).send('无效的 URL');
     }
+    const targetHostname = new URL(targetUrl).hostname;
+    const requestHeaders = {
+      'User-Agent': config.userAgent
+    };
+    if (targetHostname === 'doubanio.com' || targetHostname.endsWith('.doubanio.com')) {
+      requestHeaders.Referer = 'https://movie.douban.com/';
+    }
 
     log(`代理请求: ${targetUrl}`);
 
@@ -183,9 +190,7 @@ app.get('/proxy/:encodedUrl', async (req, res) => {
           url: targetUrl,
           responseType: 'stream',
           timeout: config.timeout,
-          headers: {
-            'User-Agent': config.userAgent
-          }
+          headers: requestHeaders
         });
       } catch (error) {
         if (retries < maxRetries) {

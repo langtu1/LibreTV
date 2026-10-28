@@ -500,7 +500,7 @@ async function fetchDoubanData(url) {
 }
 
 // 抽取渲染豆瓣卡片的逻辑到单独函数
-function renderDoubanCards(data, container) {
+async function renderDoubanCards(data, container) {
     // 创建文档片段以提高性能
     const fragment = document.createDocumentFragment();
     
@@ -514,7 +514,8 @@ function renderDoubanCards(data, container) {
         fragment.appendChild(emptyEl);
     } else {
         // 循环创建每个影视卡片
-        data.subjects.forEach(item => {
+        for (const item of data.subjects) {
+        // data.subjects.forEach(async item => {
             const card = document.createElement("div");
             card.className = "bg-[#111] hover:bg-[#222] transition-all duration-300 rounded-lg overflow-hidden flex flex-col transform hover:scale-105 shadow-md hover:shadow-lg";
             
@@ -533,7 +534,11 @@ function renderDoubanCards(data, container) {
             const originalCoverUrl = item.cover;
             
             // 2. 也准备代理URL作为备选
-            const proxiedCoverUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
+            // const proxiedCoverUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
+            const proxyUrl = PROXY_URL + encodeURIComponent(originalCoverUrl);
+            const proxiedCoverUrl = window.ProxyAuth?.addAuthToProxyUrl
+                ? await window.ProxyAuth.addAuthToProxyUrl(proxyUrl)
+                : proxyUrl;
             
             // 为不同设备优化卡片布局
             card.innerHTML = `
@@ -562,7 +567,7 @@ function renderDoubanCards(data, container) {
             `;
             
             fragment.appendChild(card);
-        });
+        }
     }
     
     // 清空并添加所有新元素

@@ -22,7 +22,7 @@ async function searchByAPIAndKeyWord(apiId, query) {
         // 添加超时处理
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
+        /* 
         // 添加鉴权参数到代理URL
         const proxiedUrl = await window.ProxyAuth?.addAuthToProxyUrl ? 
             await window.ProxyAuth.addAuthToProxyUrl(PROXY_URL + encodeURIComponent(apiUrl)) :
@@ -39,7 +39,32 @@ async function searchByAPIAndKeyWord(apiId, query) {
             return [];
         }
         
-        const data = await response.json();
+        const data = await response.json(); */
+        let data;
+
+        try {
+            // 添加鉴权参数到代理URL
+            const proxiedUrl = await window.ProxyAuth?.addAuthToProxyUrl ?
+                await window.ProxyAuth.addAuthToProxyUrl(PROXY_URL + encodeURIComponent(apiUrl)) :
+                PROXY_URL + encodeURIComponent(apiUrl);
+
+            const response = await fetch(proxiedUrl, {
+                headers: API_CONFIG.search.headers,
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                return [];
+            }
+
+            data = await response.json();
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+
+
+
         
         if (!data || !data.list || !Array.isArray(data.list) || data.list.length === 0) {
             return [];
@@ -70,12 +95,14 @@ async function searchByAPIAndKeyWord(apiId, query) {
                 
                 // 创建获取额外页的Promise
                 const pagePromise = (async () => {
+                    const pageController = new AbortController();
+                    const pageTimeoutId = setTimeout(() => pageController.abort(), 15000);
+
                     try {
-                        const pageController = new AbortController();
-                        const pageTimeoutId = setTimeout(() => pageController.abort(), 15000);
+                        
                         
                         // 添加鉴权参数到代理URL
-                        const proxiedPageUrl = await window.ProxyAuth?.addAuthToProxyUrl ? 
+                       const proxiedPageUrl = await window.ProxyAuth?.addAuthToProxyUrl ? 
                             await window.ProxyAuth.addAuthToProxyUrl(PROXY_URL + encodeURIComponent(pageUrl)) :
                             PROXY_URL + encodeURIComponent(pageUrl);
                         
@@ -83,8 +110,6 @@ async function searchByAPIAndKeyWord(apiId, query) {
                             headers: API_CONFIG.search.headers,
                             signal: pageController.signal
                         });
-                        
-                        clearTimeout(pageTimeoutId);
                         
                         if (!pageResponse.ok) return [];
                         
@@ -102,6 +127,8 @@ async function searchByAPIAndKeyWord(apiId, query) {
                     } catch (error) {
                         console.warn(`API ${apiId} 第${page}页搜索失败:`, error);
                         return [];
+                    }finally {
+                        clearTimeout(pageTimeoutId);
                     }
                 })();
                 
